@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 
 /// GridImage renders a single image intended to be used inside a grid.
 class GridImage extends StatelessWidget {
-  GridImage({this.src, this.index});
-  final src;
-  final index;
+  GridImage({@required this.src, @required this.index, this.key});
+  final String src;
+  final int index;
+  final ValueKey key;
 
   @override
   Widget build(BuildContext context) {

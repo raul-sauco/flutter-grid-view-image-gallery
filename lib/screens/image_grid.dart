@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:gridview/widgets/grid_image.dart';
 
 /// This widget renders a grid of images to the screen.
+///
+/// The grid allows for zooming in/out and it implements endless scrolling,
+/// loading more images before the user reaches the bottom of the grid.
 class ImageGrid extends StatefulWidget {
   @override
   _ImageGridState createState() => _ImageGridState();
@@ -9,11 +12,27 @@ class ImageGrid extends StatefulWidget {
 
 class _ImageGridState extends State<ImageGrid> {
   final _link = "https://placeimg.com/{w}/{h}";
+  final _scrollController = ScrollController();
   int _itemsPerRow = 4;
   int _batches = 1;
+  bool _fetching = false;
 
   @override
   Widget build(BuildContext context) {
+    // Reset the flag on every build.
+    _fetching = false;
+    // Bind the scrollController event.
+    _scrollController.addListener(() {
+      var limit = 0.8 * _scrollController.position.maxScrollExtent;
+      if (!_fetching && _scrollController.position.pixels > limit) {
+        setState(() {
+          _fetching = true;
+          _batches++;
+        });
+      }
+    });
+
+    // We need to do this inside the build because we need BuildContext.
     // Calculate parameters based on desired zoom and screen size.
     final _size = getSize(context, _itemsPerRow);
     final _itemCount =
@@ -24,11 +43,12 @@ class _ImageGridState extends State<ImageGrid> {
 
     return Stack(
       children: [
+        // Generate a grid of random images with the chosen zoom ratio.
         GridView.count(
+          controller: _scrollController,
           crossAxisCount: _itemsPerRow,
-          // Generate 100 widgets that display their index in the List.
           children: List.generate(_itemCount, (index) {
-            return GridImage(src: _src, index: index);
+            return GridImage(src: _src, index: index, key: ValueKey(index));
           }),
         ),
         Container(
@@ -43,7 +63,6 @@ class _ImageGridState extends State<ImageGrid> {
               label: _itemsPerRow.toString(),
               onChanged: (double value) {
                 setState(() {
-                  print('Updating value to $value');
                   _itemsPerRow = value.round();
                 });
               },
